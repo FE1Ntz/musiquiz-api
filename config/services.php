@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'deezer' => [
+        'base_url' => env('DEEZER_BASE_URL', 'https://api.deezer.com'),
+    ],
+
 ];

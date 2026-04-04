@@ -1,0 +1,219 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "musiquiz_api",
+        "version": "0.0.1"
+    },
+    "servers": [
+        {
+            "url": "http://localhost/api"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Deezer Artists",
+            "description": "\u041f\u043e\u0448\u0443\u043a \u0442\u0430 \u043f\u0435\u0440\u0435\u0433\u043b\u044f\u0434 \u0430\u0440\u0442\u0438\u0441\u0442\u0456\u0432 \u0447\u0435\u0440\u0435\u0437 Deezer API."
+        },
+        {
+            "name": "Artist Import",
+            "description": "\u0406\u043c\u043f\u043e\u0440\u0442 \u0430\u0440\u0442\u0438\u0441\u0442\u0456\u0432 \u0456\u0437 Deezer \u0443 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u0443 \u0431\u0430\u0437\u0443."
+        }
+    ],
+    "security": [
+        {
+            "http": []
+        }
+    ],
+    "paths": {
+        "/admin/deezer/artists": {
+            "get": {
+                "operationId": "searchDeezerArtists",
+                "description": "Search for artists on Deezer by name.",
+                "summary": "Search Deezer Artists",
+                "tags": [
+                    "Deezer Artists"
+                ],
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 255
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/admin/deezer/artists/{deezerArtistId}": {
+            "get": {
+                "operationId": "showDeezerArtist",
+                "description": "Retrieve a single artist from Deezer by their ID.",
+                "summary": "Get Deezer Artist",
+                "tags": [
+                    "Deezer Artists"
+                ],
+                "parameters": [
+                    {
+                        "name": "deezerArtistId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 200
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/admin/artists/import": {
+            "post": {
+                "operationId": "importArtist",
+                "description": "Import a Deezer artist by ID and dispatch a background job to import their full catalog (albums & tracks).",
+                "summary": "Import Artist",
+                "tags": [
+                    "Artist Import"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ImportArtistRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "integer",
+                                    "const": 202
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "http": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
+        "schemas": {
+            "ImportArtistRequest": {
+                "type": "object",
+                "properties": {
+                    "deezer_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "deezer_id"
+                ],
+                "title": "ImportArtistRequest"
+            }
+        },
+        "responses": {
+            "AuthenticationException": {
+                "description": "Unauthenticated",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Error overview."
+                                }
+                            },
+                            "required": [
+                                "message"
+                            ]
+                        }
+                    }
+                }
+            },
+            "ValidationException": {
+                "description": "Validation error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "Errors overview."
+                                },
+                                "errors": {
+                                    "type": "object",
+                                    "description": "A detailed description of each field that failed validation.",
+                                    "additionalProperties": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            },
+                            "required": [
+                                "message",
+                                "errors"
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
