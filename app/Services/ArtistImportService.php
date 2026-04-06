@@ -6,6 +6,7 @@ use App\Models\Album;
 use App\Models\Artist;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ArtistImportService
 {
@@ -31,7 +32,7 @@ class ArtistImportService
         foreach ($albums as $albumData) {
             try {
                 $this->importAlbum($albumData, $artist);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::error('Failed to import album', [
                     'deezer_artist_id' => $artist->deezer_id,
                     'deezer_album_id' => $albumData['id'] ?? null,
@@ -72,7 +73,7 @@ class ArtistImportService
             foreach ($tracks as $trackData) {
                 try {
                     $this->importTrack($trackData, $album);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     Log::error('Failed to import track', [
                         'deezer_artist_id' => $artist->deezer_id,
                         'deezer_album_id' => $albumData['id'],
@@ -115,7 +116,16 @@ class ArtistImportService
         }
 
         foreach ($contributors as $contributorData) {
-            $artist = $this->artistResolver->resolveFromDeezer($contributorData);
+            $existingArtist = Artist::where('deezer_id', $contributorData['id'])->first();
+
+            if ($existingArtist) {
+                $artistIds[] = $existingArtist->id;
+
+                continue;
+            }
+
+            $fullArtistData = $this->deezerApi->getArtist($contributorData['id']);
+            $artist = $this->artistResolver->resolveFromDeezer($fullArtistData ?? $contributorData);
             $artistIds[] = $artist->id;
         }
 

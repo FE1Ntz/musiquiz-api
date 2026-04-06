@@ -10,7 +10,7 @@ class TrackDeduplicationService
     /**
      * Find an existing track or create a new one, deduplicating by ISRC first, then deezer_id.
      *
-     * @param  array{id: int, title: string, duration: int, track_position: int, explicit_lyrics: bool, isrc?: string|null, preview?: string|null}  $trackData
+     * @param  array{id: int, title: string, duration: int, track_position: int, explicit_lyrics: bool, isrc?: string|null}  $trackData
      */
     public function findOrCreate(array $trackData, Album $album): Track
     {
@@ -34,7 +34,6 @@ class TrackDeduplicationService
                 'duration' => $trackData['duration'],
                 'track_position' => $trackData['track_position'] ?? null,
                 'explicit_lyrics' => $trackData['explicit_lyrics'] ?? false,
-                'preview' => $trackData['preview'] ?? $existingTrack->preview,
             ]);
 
             return $existingTrack;
@@ -47,7 +46,6 @@ class TrackDeduplicationService
             'track_position' => $trackData['track_position'] ?? null,
             'explicit_lyrics' => $trackData['explicit_lyrics'] ?? false,
             'isrc' => $isrc,
-            'preview' => $trackData['preview'] ?? null,
             'album_id' => $album->id,
         ]);
     }

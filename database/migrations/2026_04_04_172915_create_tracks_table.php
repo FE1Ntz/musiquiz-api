@@ -19,7 +19,6 @@ return new class extends Migration
             $table->unsignedSmallInteger('track_position')->nullable();
             $table->boolean('explicit_lyrics')->default(false);
             $table->string('isrc')->nullable()->index();
-            $table->text('preview')->nullable();
             $table->foreignId('album_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
         });

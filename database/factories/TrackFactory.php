@@ -25,7 +25,6 @@ class TrackFactory extends Factory
             'track_position' => fake()->numberBetween(1, 20),
             'explicit_lyrics' => fake()->boolean(20),
             'isrc' => fake()->unique()->regexify('[A-Z]{2}[A-Z0-9]{3}[0-9]{7}'),
-            'preview' => fake()->url(),
             'album_id' => Album::factory(),
         ];
     }

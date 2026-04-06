@@ -69,6 +69,29 @@ class DeezerApiService
     }
 
     /**
+     * Get a single track by Deezer ID (includes a fresh preview URL).
+     *
+     * @return array<string, mixed>|null
+     *
+     * @throws ConnectionException
+     */
+    public function getTrack(int $deezerId): ?array
+    {
+        $response = $this->client()->get("/track/{$deezerId}");
+
+        if ($response->failed() || isset($response->json()['error'])) {
+            Log::error('Deezer API: Failed to get track', [
+                'deezer_track_id' => $deezerId,
+                'status' => $response->status(),
+            ]);
+
+            return null;
+        }
+
+        return $response->json();
+    }
+
+    /**
      * Get all albums for an artist, handling pagination.
      *
      * @return array<int, array<string, mixed>>

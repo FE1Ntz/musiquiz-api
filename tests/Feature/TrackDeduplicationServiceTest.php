@@ -32,7 +32,6 @@ class TrackDeduplicationServiceTest extends TestCase
             'track_position' => 1,
             'explicit_lyrics' => false,
             'isrc' => 'GBDUW0000059',
-            'preview' => 'https://example.com/preview.mp3',
         ];
 
         $track = $this->service->findOrCreate($trackData, $album);
@@ -59,7 +58,6 @@ class TrackDeduplicationServiceTest extends TestCase
             'track_position' => 2,
             'explicit_lyrics' => false,
             'isrc' => 'GBDUW0000059',
-            'preview' => 'https://example.com/preview.mp3',
         ];
 
         $track = $this->service->findOrCreate($trackData, $album);
@@ -83,7 +81,6 @@ class TrackDeduplicationServiceTest extends TestCase
             'track_position' => 1,
             'explicit_lyrics' => true,
             'isrc' => null,
-            'preview' => 'https://example.com/new-preview.mp3',
         ];
 
         $track = $this->service->findOrCreate($trackData, $album);
@@ -109,7 +106,6 @@ class TrackDeduplicationServiceTest extends TestCase
             'track_position' => 2,
             'explicit_lyrics' => false,
             'isrc' => 'GBDUW0000060',
-            'preview' => 'https://example.com/preview2.mp3',
         ];
 
         $this->service->findOrCreate($trackData, $album);
@@ -128,7 +124,6 @@ class TrackDeduplicationServiceTest extends TestCase
             'track_position' => 1,
             'explicit_lyrics' => false,
             'isrc' => null,
-            'preview' => 'https://example.com/preview.mp3',
         ];
 
         $track = $this->service->findOrCreate($trackData, $album);

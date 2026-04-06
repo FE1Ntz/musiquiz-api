@@ -22,7 +22,6 @@ class ImportArtistCatalogJobTest extends TestCase
             'track_position' => 1,
             'explicit_lyrics' => false,
             'isrc' => $isrc,
-            'preview' => "https://example.com/preview/{$id}.mp3",
             'contributors' => $contributors,
             'artist' => $contributors[0] ?? ['id' => 27, 'name' => 'Daft Punk'],
         ];
@@ -105,12 +104,34 @@ class ImportArtistCatalogJobTest extends TestCase
                 ->with(302)
                 ->once()
                 ->andReturn($trackData);
+
+            $mock->shouldReceive('getArtist')
+                ->with(515)
+                ->once()
+                ->andReturn([
+                    'id' => 515,
+                    'name' => 'Pharrell Williams',
+                    'picture_medium' => 'https://example.com/pharrell.jpg',
+                    'nb_album' => 10,
+                    'nb_fan' => 5000000,
+                ]);
+
+            $mock->shouldReceive('getArtist')
+                ->with(293)
+                ->once()
+                ->andReturn([
+                    'id' => 293,
+                    'name' => 'Nile Rodgers',
+                    'picture_medium' => 'https://example.com/nile.jpg',
+                    'nb_album' => 25,
+                    'nb_fan' => 800000,
+                ]);
         });
 
         ImportArtistCatalogJob::dispatchSync($artist);
 
-        $this->assertDatabaseHas('artists', ['deezer_id' => 515, 'name' => 'Pharrell Williams']);
-        $this->assertDatabaseHas('artists', ['deezer_id' => 293, 'name' => 'Nile Rodgers']);
+        $this->assertDatabaseHas('artists', ['deezer_id' => 515, 'name' => 'Pharrell Williams', 'fans' => 5000000]);
+        $this->assertDatabaseHas('artists', ['deezer_id' => 293, 'name' => 'Nile Rodgers', 'fans' => 800000]);
         $this->assertDatabaseCount('artist_track', 3);
         $this->assertDatabaseCount('tracks', 1);
     }
@@ -197,7 +218,6 @@ class ImportArtistCatalogJobTest extends TestCase
                 'track_position' => 1,
                 'explicit_lyrics' => false,
                 'isrc' => null,
-                'preview' => 'https://example.com/preview.mp3',
                 'contributors' => [['id' => 27, 'name' => 'Daft Punk']],
                 'artist' => ['id' => 27, 'name' => 'Daft Punk'],
             ],
@@ -260,5 +280,99 @@ class ImportArtistCatalogJobTest extends TestCase
         $this->assertDatabaseCount('tracks', 1);
         $this->assertDatabaseCount('artist_track', 1);
         $this->assertDatabaseCount('album_artist', 1);
+    }
+
+    public function test_job_does_not_overwrite_existing_collaborator_data(): void
+    {
+        $artist = Artist::factory()->create(['deezer_id' => 27, 'name' => 'Daft Punk']);
+        $collaborator = Artist::factory()->create([
+            'deezer_id' => 515,
+            'name' => 'Pharrell Williams',
+            'fans' => 5000000,
+            'albums_count' => 10,
+            'cover' => 'https://example.com/pharrell-original.jpg',
+        ]);
+
+        $albumData = [
+            [
+                'id' => 307,
+                'title' => 'Collab Album',
+                'record_type' => 'single',
+                'release_date' => '2013-04-19',
+                'explicit_lyrics' => false,
+            ],
+        ];
+
+        $trackData = [
+            $this->makeDeezerTrack(6001, 'Collab Track', 'COLB00000001', [
+                ['id' => 27, 'name' => 'Daft Punk'],
+                ['id' => 515, 'name' => 'Pharrell Williams'],
+            ]),
+        ];
+
+        $this->mock(DeezerApiService::class, function (MockInterface $mock) use ($albumData, $trackData): void {
+            $mock->shouldReceive('getArtistAlbums')
+                ->with(27)
+                ->once()
+                ->andReturn($albumData);
+
+            $mock->shouldReceive('getAlbumTracks')
+                ->with(307)
+                ->once()
+                ->andReturn($trackData);
+
+            $mock->shouldNotReceive('getArtist');
+        });
+
+        ImportArtistCatalogJob::dispatchSync($artist);
+
+        $collaborator->refresh();
+        $this->assertSame(5000000, $collaborator->fans);
+        $this->assertSame(10, $collaborator->albums_count);
+        $this->assertSame('https://example.com/pharrell-original.jpg', $collaborator->cover);
+    }
+
+    public function test_job_fetches_full_data_for_new_collaborator_when_api_fails(): void
+    {
+        $artist = Artist::factory()->create(['deezer_id' => 27, 'name' => 'Daft Punk']);
+
+        $albumData = [
+            [
+                'id' => 308,
+                'title' => 'Fallback Album',
+                'record_type' => 'single',
+                'release_date' => '2023-01-01',
+                'explicit_lyrics' => false,
+            ],
+        ];
+
+        $trackData = [
+            $this->makeDeezerTrack(7001, 'Fallback Track', 'FLBK00000001', [
+                ['id' => 27, 'name' => 'Daft Punk'],
+                ['id' => 999, 'name' => 'Unknown Artist'],
+            ]),
+        ];
+
+        $this->mock(DeezerApiService::class, function (MockInterface $mock) use ($albumData, $trackData): void {
+            $mock->shouldReceive('getArtistAlbums')
+                ->with(27)
+                ->once()
+                ->andReturn($albumData);
+
+            $mock->shouldReceive('getAlbumTracks')
+                ->with(308)
+                ->once()
+                ->andReturn($trackData);
+
+            $mock->shouldReceive('getArtist')
+                ->with(999)
+                ->once()
+                ->andReturnNull();
+        });
+
+        ImportArtistCatalogJob::dispatchSync($artist);
+
+        $this->assertDatabaseHas('artists', ['deezer_id' => 999, 'name' => 'Unknown Artist']);
+        $this->assertDatabaseCount('artist_track', 2);
     }
 }

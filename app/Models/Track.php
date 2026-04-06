@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-#[Fillable(['deezer_id', 'title', 'duration', 'track_position', 'explicit_lyrics', 'isrc', 'preview', 'album_id'])]
+#[Fillable(['deezer_id', 'title', 'duration', 'track_position', 'explicit_lyrics', 'isrc', 'album_id'])]
 class Track extends Model
 {
     /** @use HasFactory<TrackFactory> */
