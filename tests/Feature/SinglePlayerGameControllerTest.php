@@ -2,16 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Events\GameRoundStarted;
-use App\Events\GameSessionCreated;
-use App\Events\GameSessionFinished;
 use App\Models\Artist;
 use App\Models\GameSession;
 use App\Models\Track;
 use App\Models\User;
 use App\Services\DeezerApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -66,7 +62,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_creates_game_session_and_starts_first_round(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -90,14 +85,10 @@ class SinglePlayerGameControllerTest extends TestCase
             ->assertJsonPath('game_session.total_rounds', 10)
             ->assertJsonPath('game_session.score', 0)
             ->assertJsonPath('game_session.status', 'in_progress');
-
-        Event::assertDispatched(GameSessionCreated::class);
-        Event::assertDispatched(GameRoundStarted::class);
     }
 
     public function test_store_creates_game_with_medium_difficulty(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $this->postJson(route('games.single-player.store'), [
@@ -110,7 +101,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_creates_game_with_hard_difficulty(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $this->postJson(route('games.single-player.store'), [
@@ -123,7 +113,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_limits_rounds_to_available_tracks(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks(3);
 
         $this->postJson(route('games.single-player.store'), [
@@ -136,7 +125,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_fails_for_artist_without_playable_tracks(): void
     {
-        Event::fake();
         $artist = Artist::factory()->create();
 
         $this->postJson(route('games.single-player.store'), [
@@ -178,7 +166,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_show_returns_game_state(): void
     {
-        Event::fake();
         $game = $this->createGameInProgress();
 
         $this->getJson(route('games.show', $game['game_session']->id))
@@ -193,7 +180,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_show_does_not_expose_correct_answer(): void
     {
-        Event::fake();
         $game = $this->createGameInProgress();
 
         $response = $this->getJson(route('games.show', $game['game_session']->id))
@@ -214,7 +200,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_next_round_advances_game(): void
     {
-        Event::fake();
         $game = $this->createGameInProgress();
         $gameSession = $game['game_session'];
 
@@ -236,19 +221,15 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_finish_ends_game_session(): void
     {
-        Event::fake();
         $game = $this->createGameInProgress();
 
         $this->postJson(route('games.finish', $game['game_session']->id))
             ->assertOk()
             ->assertJsonPath('game_session.status', 'finished');
-
-        Event::assertDispatched(GameSessionFinished::class);
     }
 
     public function test_store_creates_game_for_authenticated_user(): void
     {
-        Event::fake();
         $user = User::factory()->create();
         $artist = $this->createArtistWithTracks();
 
@@ -267,7 +248,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_creates_game_for_guest(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $this->postJson(route('games.single-player.store'), [
@@ -284,7 +264,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_current_round_preview_url_is_provided(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -300,7 +279,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_snippet_timing_is_within_preview_bounds(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -319,7 +297,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_defaults_to_multiple_choice_mode(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -342,7 +319,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_creates_text_input_mode_game(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -358,7 +334,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_store_creates_explicit_multiple_choice_mode_game(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -387,7 +362,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_next_round_includes_track_options_for_multiple_choice(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -412,7 +386,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_next_round_excludes_track_options_for_text_input(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [
@@ -434,7 +407,6 @@ class SinglePlayerGameControllerTest extends TestCase
 
     public function test_track_options_include_correct_answer(): void
     {
-        Event::fake();
         $artist = $this->createArtistWithTracks();
 
         $response = $this->postJson(route('games.single-player.store'), [

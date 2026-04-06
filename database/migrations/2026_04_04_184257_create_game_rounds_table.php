@@ -19,6 +19,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('round_number');
             $table->unsignedSmallInteger('snippet_start_second');
             $table->unsignedSmallInteger('snippet_end_second');
+            $table->json('track_options')->nullable();
             $table->boolean('is_completed')->default(false);
             $table->timestamp('started_at')->nullable();
             $table->timestamp('completed_at')->nullable();

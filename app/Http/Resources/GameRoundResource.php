@@ -26,6 +26,7 @@ class GameRoundResource extends JsonResource
             'preview_url' => $this->preview_url,
             'snippet_start_second' => $this->snippet_start_second,
             'snippet_end_second' => $this->snippet_end_second,
+            'track_options' => $this->when($this->track_options !== null, $this->track_options),
             'is_completed' => $this->is_completed,
             'started_at' => $this->started_at?->toIso8601String(),
         ];

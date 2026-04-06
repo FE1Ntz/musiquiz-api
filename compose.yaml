@@ -24,6 +24,44 @@ services:
         depends_on:
             - mysql
             - redis
+    queue:
+        image: 'sail-8.5/app'
+        command: ['php', '/var/www/html/artisan', 'queue:work', 'redis', '--sleep=3', '--tries=3', '--timeout=90']
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            laravel.test:
+                condition: service_started
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        restart: unless-stopped
+    reverb:
+        image: 'sail-8.5/app'
+        command: ['php', '/var/www/html/artisan', 'reverb:start', '--host=0.0.0.0', '--port=8080', '--debug']
+        ports:
+            - '${REVERB_PORT:-8080}:8080'
+        environment:
+            WWWUSER: '${WWWUSER}'
+            LARAVEL_SAIL: 1
+        volumes:
+            - '.:/var/www/html'
+        networks:
+            - sail
+        depends_on:
+            laravel.test:
+                condition: service_started
+            mysql:
+                condition: service_healthy
+            redis:
+                condition: service_healthy
+        restart: unless-stopped
     mysql:
         image: 'mysql:8.4'
         ports:

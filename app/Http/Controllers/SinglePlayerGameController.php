@@ -8,15 +8,18 @@ use App\Http\Requests\CreateSinglePlayerGameRequest;
 use App\Http\Resources\GameRoundResource;
 use App\Http\Resources\GameSessionResource;
 use App\Models\Artist;
-use App\Models\GameRound;
 use App\Models\GameSession;
 use App\Services\GameSessionService;
+use App\Services\GameTrackSelectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 
 class SinglePlayerGameController extends Controller
 {
-    public function __construct(private GameSessionService $gameSessionService) {}
+    public function __construct(
+        private GameSessionService $gameSessionService,
+        private GameTrackSelectionService $trackSelectionService,
+    ) {}
 
     /**
      * Create a new single-player game session.
@@ -48,7 +51,7 @@ class SinglePlayerGameController extends Controller
         ];
 
         if ($gameSession->isMultipleChoice()) {
-            $response['track_options'] = $this->buildTrackOptions($gameSession, $firstRound);
+            $response['track_options'] = $this->trackSelectionService->buildTrackOptions($gameSession->artist, $firstRound);
         }
 
         return response()->json($response, 201);
@@ -65,7 +68,7 @@ class SinglePlayerGameController extends Controller
     }
 
     /**
-     * Get the current game state (alias for show with additional round data).
+     * Get the current game state with track options for multiple choice.
      */
     public function state(GameSession $gameSession): JsonResponse
     {
@@ -75,7 +78,7 @@ class SinglePlayerGameController extends Controller
             $currentRound = $gameSession->currentRound();
 
             if ($currentRound) {
-                $state['track_options'] = $this->buildTrackOptions($gameSession, $currentRound);
+                $state['track_options'] = $this->trackSelectionService->buildTrackOptions($gameSession->artist, $currentRound);
             }
         }
 
@@ -106,7 +109,7 @@ class SinglePlayerGameController extends Controller
         ];
 
         if ($gameSession->isMultipleChoice()) {
-            $response['track_options'] = $this->buildTrackOptions($gameSession, $round);
+            $response['track_options'] = $this->trackSelectionService->buildTrackOptions($gameSession->artist, $round);
         }
 
         return response()->json($response);
@@ -124,33 +127,5 @@ class SinglePlayerGameController extends Controller
             'game_session' => new GameSessionResource($gameSession),
             'message' => 'Game session finished.',
         ]);
-    }
-
-    /**
-     * Build the track options array for a multiple choice round.
-     *
-     * Includes the correct answer and 3 random decoy tracks from the same artist.
-     *
-     * @return array<int, array{id: int, title: string}>
-     */
-    private function buildTrackOptions(GameSession $gameSession, GameRound $round): array
-    {
-        $correctTrack = $round->track;
-
-        $decoys = $gameSession->artist->tracks()
-            ->where('tracks.id', '!=', $correctTrack->id)
-            ->where('duration', '>', 0)
-            ->inRandomOrder()
-            ->limit(3)
-            ->get(['tracks.id', 'title']);
-
-        return $decoys->push($correctTrack)
-            ->shuffle()
-            ->map(fn ($track) => [
-                'id' => $track->id,
-                'title' => $track->title,
-            ])
-            ->values()
-            ->all();
     }
 }

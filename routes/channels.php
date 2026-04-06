@@ -1,7 +1,5 @@
 <?php
 
-use App\Models\GameSession;
-use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -14,13 +12,3 @@ use Illuminate\Support\Facades\Broadcast;
 | used to check if an authenticated user can listen to the channel.
 |
 */
-
-Broadcast::channel('game-session.{gameSessionId}', function (User $user, int $gameSessionId) {
-    $gameSession = GameSession::find($gameSessionId);
-
-    if (! $gameSession) {
-        return false;
-    }
-
-    return $gameSession->user_id === $user->id;
-});

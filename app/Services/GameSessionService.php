@@ -5,11 +5,6 @@ namespace App\Services;
 use App\Enums\AnswerMode;
 use App\Enums\Difficulty;
 use App\Enums\GameStatus;
-use App\Events\GameAnswerSubmitted;
-use App\Events\GameRoundStarted;
-use App\Events\GameScoreUpdated;
-use App\Events\GameSessionCreated;
-use App\Events\GameSessionFinished;
 use App\Models\Artist;
 use App\Models\GameAnswer;
 use App\Models\GameRound;
@@ -86,8 +81,6 @@ class GameSessionService
 
             $gameSession->load('rounds');
 
-            event(new GameSessionCreated($gameSession));
-
             return $gameSession;
         });
     }
@@ -131,8 +124,6 @@ class GameSessionService
         ]);
 
         $gameSession->refresh();
-
-        event(new GameRoundStarted($gameSession, $round));
 
         return $round;
     }
@@ -224,9 +215,6 @@ class GameSessionService
             ]);
             $gameSession->refresh();
 
-            event(new GameAnswerSubmitted($gameSession, $currentRound, $answer));
-            event(new GameScoreUpdated($gameSession));
-
             return [
                 'answer' => $answer,
                 'is_correct' => $isCorrect,
@@ -287,8 +275,6 @@ class GameSessionService
 
             $gameSession->refresh();
 
-            event(new GameAnswerSubmitted($gameSession, $currentRound, $answer));
-
             return [
                 'answer' => $answer,
                 'is_correct' => false,
@@ -321,8 +307,6 @@ class GameSessionService
         ]);
 
         $gameSession->refresh();
-
-        event(new GameSessionFinished($gameSession));
 
         return true;
     }

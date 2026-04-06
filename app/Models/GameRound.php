@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
     'round_number',
     'snippet_start_second',
     'snippet_end_second',
+    'track_options',
     'preview_url',
     'is_completed',
     'started_at',
@@ -34,6 +35,7 @@ class GameRound extends Model
     {
         return [
             'is_completed' => 'boolean',
+            'track_options' => 'array',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

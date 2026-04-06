@@ -3,14 +3,11 @@
 namespace Tests\Feature;
 
 use App\Enums\GameStatus;
-use App\Events\GameAnswerSubmitted;
-use App\Events\GameScoreUpdated;
 use App\Models\Artist;
 use App\Models\GameSession;
 use App\Models\Track;
 use App\Services\DeezerApiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Event;
 use Mockery\MockInterface;
 use Tests\TestCase;
 
@@ -37,8 +34,6 @@ class GameAnswerControllerTest extends TestCase
             }
         });
 
-        Event::fake();
-
         $response = $this->postJson(route('games.single-player.store'), [
             'artist_id' => $artist->id,
             'difficulty' => 'easy',
@@ -54,8 +49,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
 
-        Event::fake();
-
         $response = $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $currentRound->track_id,
             'answer_time_ms' => 5000,
@@ -67,9 +60,6 @@ class GameAnswerControllerTest extends TestCase
 
         $this->assertGreaterThan(0, $response->json('points_awarded'));
         $this->assertGreaterThan(0, $response->json('updated_total_score'));
-
-        Event::assertDispatched(GameAnswerSubmitted::class);
-        Event::assertDispatched(GameScoreUpdated::class);
     }
 
     public function test_submit_wrong_answer_subtracts_points(): void
@@ -78,8 +68,6 @@ class GameAnswerControllerTest extends TestCase
 
         // Create a wrong track
         $wrongTrack = Track::factory()->create();
-
-        Event::fake();
 
         $response = $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $wrongTrack->id,
@@ -99,8 +87,6 @@ class GameAnswerControllerTest extends TestCase
         $currentRound = $gameSession->currentRound();
         $correctTitle = $currentRound->track->title;
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'text_guess' => $correctTitle,
             'answer_time_ms' => 3000,
@@ -112,8 +98,6 @@ class GameAnswerControllerTest extends TestCase
     public function test_submit_text_guess_wrong(): void
     {
         $gameSession = $this->createGameInProgress();
-
-        Event::fake();
 
         $this->postJson(route('games.answer', $gameSession->id), [
             'text_guess' => 'Completely Wrong Song Title That Does Not Match Anything At All',
@@ -127,8 +111,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
-
-        Event::fake();
 
         // First answer
         $this->postJson(route('games.answer', $gameSession->id), [
@@ -148,8 +130,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $gameSession->update(['status' => GameStatus::Finished, 'ended_at' => now()]);
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => 1,
             'answer_time_ms' => 5000,
@@ -160,8 +140,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'answer_time_ms' => 5000,
         ])->assertUnprocessable()
@@ -171,8 +149,6 @@ class GameAnswerControllerTest extends TestCase
     public function test_answer_requires_answer_time(): void
     {
         $gameSession = $this->createGameInProgress();
-
-        Event::fake();
 
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => 1,
@@ -202,8 +178,6 @@ class GameAnswerControllerTest extends TestCase
                     ]);
             }
         });
-
-        Event::fake();
 
         // Game 1: fast answer
         $response1 = $this->postJson(route('games.single-player.store'), [
@@ -244,8 +218,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $wrongTrack = Track::factory()->create();
 
-        Event::fake();
-
         $response = $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $wrongTrack->id,
             'answer_time_ms' => 5000,
@@ -263,8 +235,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $wrongTrack = Track::factory()->create();
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $wrongTrack->id,
             'answer_time_ms' => 5000,
@@ -278,8 +248,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
-
-        Event::fake();
 
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $currentRound->track_id,
@@ -298,8 +266,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
-
-        Event::fake();
 
         $response = $this->postJson(route('games.timeout', $gameSession->id));
 
@@ -327,8 +293,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
 
-        Event::fake();
-
         $scoreBefore = $gameSession->score;
 
         $this->postJson(route('games.timeout', $gameSession->id))
@@ -344,8 +308,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $gameSession->update(['status' => GameStatus::Finished, 'ended_at' => now()]);
 
-        Event::fake();
-
         $this->postJson(route('games.timeout', $gameSession->id))
             ->assertUnprocessable();
     }
@@ -354,8 +316,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
-
-        Event::fake();
 
         // Answer the round first
         $this->postJson(route('games.answer', $gameSession->id), [
@@ -376,8 +336,6 @@ class GameAnswerControllerTest extends TestCase
         // Move the round's started_at far into the past (beyond time limit + grace period)
         $currentRound->update(['started_at' => now()->subSeconds(60)]);
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $currentRound->track_id,
             'answer_time_ms' => 5000,
@@ -388,7 +346,6 @@ class GameAnswerControllerTest extends TestCase
 
     public function test_game_session_response_includes_answer_time_limit(): void
     {
-        Event::fake();
         $artist = Artist::factory()->create();
         $tracks = Track::factory()->count(10)->create();
         $artist->tracks()->attach($tracks->pluck('id'));
@@ -417,7 +374,6 @@ class GameAnswerControllerTest extends TestCase
 
     public function test_hard_difficulty_has_shorter_answer_time_limit(): void
     {
-        Event::fake();
         $artist = Artist::factory()->create();
         $tracks = Track::factory()->count(10)->create();
         $artist->tracks()->attach($tracks->pluck('id'));
@@ -449,8 +405,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $currentRound = $gameSession->currentRound();
 
-        Event::fake();
-
         $this->assertEquals(0, $gameSession->correct_answers_count);
 
         $this->postJson(route('games.answer', $gameSession->id), [
@@ -468,8 +422,6 @@ class GameAnswerControllerTest extends TestCase
         $gameSession = $this->createGameInProgress();
         $wrongTrack = Track::factory()->create();
 
-        Event::fake();
-
         $this->postJson(route('games.answer', $gameSession->id), [
             'guessed_track_id' => $wrongTrack->id,
             'answer_time_ms' => 5000,
@@ -484,8 +436,6 @@ class GameAnswerControllerTest extends TestCase
     {
         $gameSession = $this->createGameInProgress();
 
-        Event::fake();
-
         $this->postJson(route('games.timeout', $gameSession->id))
             ->assertOk();
 
@@ -495,7 +445,6 @@ class GameAnswerControllerTest extends TestCase
 
     public function test_game_session_response_includes_correct_answers_count(): void
     {
-        Event::fake();
         $artist = Artist::factory()->create();
         $tracks = Track::factory()->count(10)->create();
         $artist->tracks()->attach($tracks->pluck('id'));

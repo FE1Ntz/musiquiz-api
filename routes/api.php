@@ -4,6 +4,7 @@ use App\Http\Controllers\ArtistImportController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DeezerArtistController;
 use App\Http\Controllers\GameAnswerController;
+use App\Http\Controllers\MultiplayerGameController;
 use App\Http\Controllers\PublicArtistController;
 use App\Http\Controllers\SinglePlayerGameController;
 use Illuminate\Support\Facades\Route;
@@ -36,4 +37,16 @@ Route::prefix('games')->group(function (): void {
     Route::post('/{gameSession}/answer', [GameAnswerController::class, 'store'])->name('games.answer');
     Route::post('/{gameSession}/timeout', [GameAnswerController::class, 'timeout'])->name('games.timeout');
     Route::post('/{gameSession}/finish', [SinglePlayerGameController::class, 'finish'])->name('games.finish');
+});
+
+// Multiplayer routes
+Route::prefix('multiplayer')->group(function (): void {
+    Route::post('/rooms', [MultiplayerGameController::class, 'createRoom'])->name('multiplayer.rooms.store');
+    Route::post('/rooms/{code}/join', [MultiplayerGameController::class, 'joinRoom'])->name('multiplayer.rooms.join');
+    Route::get('/rooms/{gameRoom}', [MultiplayerGameController::class, 'showRoom'])->name('multiplayer.rooms.show');
+    Route::post('/rooms/{gameRoom}/leave', [MultiplayerGameController::class, 'leaveRoom'])->name('multiplayer.rooms.leave');
+    Route::post('/rooms/{gameRoom}/start', [MultiplayerGameController::class, 'startGame'])->name('multiplayer.rooms.start');
+    Route::post('/rooms/{gameRoom}/answer', [MultiplayerGameController::class, 'submitAnswer'])->name('multiplayer.rooms.answer');
+    Route::post('/rooms/{gameRoom}/timeout', [MultiplayerGameController::class, 'timeout'])->name('multiplayer.rooms.timeout');
+    Route::get('/rooms/{gameRoom}/leaderboard', [MultiplayerGameController::class, 'leaderboard'])->name('multiplayer.rooms.leaderboard');
 });
